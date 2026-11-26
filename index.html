@@ -1,367 +1,334 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>MATRI JEWELLERS — Digital Memo & Receipt Verification</title>
-<style>
-  :root {
-    --maroon: #4a0e25;
-    --maroon-dark: #2c0716;
-    --gold: #c9971c;
-    --gold-light: #f6e27a;
-    --paper: #faf6ee;
-    --ink: #1f1b18;
-    --muted: #5c534a;
-    --green: #0f766e;
-    --red: #b91c1c;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-  body {
-    min-height: 100vh;
-    background: radial-gradient(circle at top, #380a1e 0%, #16050c 70%, #0b0206 100%);
-    padding: 18px 12px 36px;
-    color: var(--ink);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .wrap { width: 100%; max-width: 520px; }
-  .sheet {
-    background: var(--paper);
-    border: 2.5px solid #9e7818;
-    border-radius: 14px;
-    padding: 20px 18px;
-    box-shadow: 0 22px 55px rgba(0,0,0,0.6);
-    position: relative;
-    overflow: hidden;
-  }
-  .watermark {
-    position: absolute;
-    top: 52%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(-24deg);
-    font-size: 46px;
-    font-weight: 900;
-    color: rgba(74, 14, 37, 0.055);
-    white-space: nowrap;
-    pointer-events: none;
-    user-select: none;
-    z-index: 0;
-  }
-  .sheet > *:not(.watermark) { position: relative; z-index: 1; }
-
-  .header {
-    text-align: center;
-    background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
-    color: var(--gold-light);
-    padding: 16px 12px;
-    border-radius: 10px;
-    border: 1px solid var(--gold);
-  }
-  .crest {
-    width: 44px; height: 44px; margin: 0 auto 6px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #fff1a8, #c9971c);
-    color: var(--maroon-dark);
-    font-family: Georgia, serif;
-    font-weight: 900; font-size: 17px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .header h1 { font-family: Georgia, serif; font-size: 21px; letter-spacing: 1.6px; margin-bottom: 3px; }
-  .header .sub { font-size: 11.5px; color: #f4e8d1; line-height: 1.4; }
-
-  .verify-bar {
-    margin: 14px 0;
-    padding: 10px 12px;
-    border-radius: 9px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-weight: 800;
-    font-size: 13px;
-    text-align: center;
-  }
-  .verify-ok {
-    background: #e6f6f4;
-    border: 1.5px solid #0f766e;
-    color: #0f766e;
-  }
-  .verify-bad {
-    background: #fef2f2;
-    border: 1.5px solid #b91c1c;
-    color: #b91c1c;
-  }
-
-  .highlight-box {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 2px solid var(--maroon);
-    background: #fffdf8;
-    margin-bottom: 12px;
-  }
-  .hl-label { font-size: 11px; font-weight: 800; color: var(--maroon); text-transform: uppercase; }
-  .hl-amount { font-size: 26px; font-weight: 900; color: var(--maroon-dark); line-height: 1.15; margin-top: 2px; }
-  .hl-words { font-size: 12.5px; font-weight: 700; color: var(--maroon); margin-top: 4px; }
-  .hl-badge {
-    background: var(--maroon);
-    color: var(--gold-light);
-    border: 1px solid var(--gold);
-    border-radius: 8px;
-    padding: 8px 12px;
-    text-align: center;
-    min-width: 98px;
-  }
-  .hl-badge .big { font-size: 22px; font-weight: 900; line-height: 1.1; }
-  .hl-badge .sm { font-size: 10px; font-weight: 700; }
-
-  .meta-card {
-    background: #fffdf8;
-    border: 1px solid #d4bc84;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 13px;
-    line-height: 1.6;
-    margin-bottom: 12px;
-  }
-  .meta-row { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dashed #e7dcc4; padding: 4px 0; }
-  .meta-row:last-child { border-bottom: none; }
-  .meta-k { color: var(--muted); font-weight: 600; }
-  .meta-v { font-weight: 800; color: var(--ink); text-align: right; }
-
-  .items-table { width: 100%; border-collapse: collapse; font-size: 12.5px; background: #fffdf8; margin-bottom: 12px; border-radius: 8px; overflow: hidden; }
-  .items-table th { background: var(--maroon); color: var(--gold-light); padding: 7px 8px; text-align: left; font-size: 11.5px; }
-  .items-table td { padding: 8px; border-bottom: 1px solid #e5dac3; }
-
-  .actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
-  .btn {
-    flex: 1;
-    min-width: 140px;
-    padding: 11px 14px;
-    border-radius: 9px;
-    border: none;
-    font-weight: 800;
-    font-size: 13px;
-    cursor: pointer;
-    text-align: center;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-  }
-  .btn-call { background: linear-gradient(135deg, #0f766e, #0d9488); color: #fff; }
-  .btn-gold { background: linear-gradient(135deg, #f6e27a, #c9971c); color: #240614; }
-  .btn-outline { background: transparent; border: 1.5px solid var(--maroon); color: var(--maroon); }
-
-  .footer-note { text-align: center; font-size: 11px; color: #cbb7be; margin-top: 14px; line-height: 1.5; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MATRI JEWELLERS — Digital Receipt & Memo Verification</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(160deg, #2A0810 0%, #140509 55%, #1E0B10 100%);
+      font-family: 'Segoe UI', system-ui, -apple-system, 'Noto Sans Bengali', 'Hind Siliguri', sans-serif;
+      color: #1A120C;
+      padding: 14px 10px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .card-shell {
+      width: 100%;
+      max-width: 440px;
+      background: #FCF7EA;
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+      border: 2px solid #D4AF37;
+    }
+    .header-box {
+      background: linear-gradient(145deg, #5A1220, #3A0A14);
+      color: #FCE8A6;
+      border-radius: 14px;
+      padding: 18px 14px 16px;
+      text-align: center;
+      margin-bottom: 12px;
+      border: 1.5px solid rgba(212, 175, 55, 0.5);
+    }
+    .mj-circle {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #F7E19C, #C69B3B);
+      color: #2A0810;
+      font-family: Georgia, serif;
+      font-size: 23px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 10px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      letter-spacing: 1px;
+    }
+    .header-box h1 {
+      font-family: Georgia, serif;
+      font-size: 22px;
+      letter-spacing: 1.5px;
+      color: #F6DE96;
+      margin-bottom: 5px;
+    }
+    .header-box p {
+      font-size: 12.2px;
+      color: #F2E7D0;
+      line-height: 1.5;
+    }
+    .verified-bar {
+      background: #E9F9F1;
+      border: 1.5px solid #10B981;
+      color: #065F46;
+      border-radius: 12px;
+      padding: 10px 12px;
+      text-align: center;
+      font-size: 13.5px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .amount-card {
+      background: #FFFDF8;
+      border: 1.5px solid #6B1D25;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .amount-left .lbl {
+      font-size: 11px;
+      font-weight: 800;
+      color: #6B1D25;
+      letter-spacing: 0.4px;
+      margin-bottom: 4px;
+    }
+    .amount-left .big-val {
+      font-size: 28px;
+      font-weight: 900;
+      color: #1A120C;
+      line-height: 1.15;
+    }
+    .amount-left .words {
+      font-size: 12px;
+      font-weight: 700;
+      color: #5C161E;
+      margin-top: 5px;
+    }
+    .side-pill {
+      background: linear-gradient(145deg, #5C161E, #3E0C14);
+      color: #FCE8A6;
+      border: 1.5px solid #D4AF37;
+      border-radius: 12px;
+      padding: 10px 12px;
+      text-align: center;
+      min-width: 102px;
+      flex-shrink: 0;
+    }
+    .side-pill .sp-top { font-size: 10.5px; opacity: 0.9; }
+    .side-pill .sp-val { font-size: 20px; font-weight: 900; margin: 2px 0; }
+    .side-pill .sp-sub { font-size: 10.5px; opacity: 0.9; }
+    .details-box {
+      background: #F6EEDB;
+      border: 1px solid #D5BE8A;
+      border-radius: 14px;
+      padding: 6px 14px;
+      margin-bottom: 14px;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 9px 0;
+      border-bottom: 1px dashed #D5BE8A;
+      font-size: 13.5px;
+    }
+    .row:last-child { border-bottom: none; }
+    .row .k { color: #5C4B3B; font-weight: 600; flex-shrink: 0; }
+    .row .v { color: #140D08; font-weight: 800; text-align: right; word-break: break-word; }
+    .badge-active {
+      display: inline-block;
+      background: #DBEAFE;
+      color: #1D4ED8;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .badge-paid {
+      display: inline-block;
+      background: #D1FAE5;
+      color: #065F46;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .badge-due {
+      display: inline-block;
+      background: #FEE2E2;
+      color: #B91C1C;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .call-btn {
+      display: block;
+      width: 100%;
+      text-align: center;
+      text-decoration: none;
+      background: linear-gradient(135deg, #0D8A6A, #096B52);
+      color: #FFFFFF;
+      font-size: 15px;
+      font-weight: 800;
+      padding: 13px;
+      border-radius: 12px;
+      box-shadow: 0 6px 16px rgba(9, 107, 82, 0.35);
+    }
+    .footer-note {
+      margin-top: 14px;
+      text-align: center;
+      font-size: 11.5px;
+      color: #C7B99D;
+    }
+    .empty-box {
+      text-align: center;
+      padding: 20px 10px;
+      color: #4A3B2C;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="sheet" id="viewerRoot">
-    <div class="watermark">মাতৃ জুয়েলার্স</div>
-    <div class="header">
-      <div class="crest">MJ</div>
+  <div class="card-shell">
+    <div class="header-box">
+      <div class="mj-circle">MJ</div>
       <h1>MATRI JEWELLERS</h1>
-      <div class="sub">Prop: Sajal Karmakar • Kasba Puraton Bazar, Kasba, Brahmanbaria</div>
-      <div class="sub">Mobile: +8801718-305231, +8801819-475273</div>
+      <p>Prop: Sajal Karmakar &bull; Kasba Puraton Bazar, Kasba, Brahmanbaria</p>
+      <p>Mobile: +8801718-305231, +8801819-475273, +8801711-173911</p>
     </div>
-    <div id="contentArea" style="margin-top:14px;"></div>
+
+    <div id="contentArea"></div>
+
+    <a class="call-btn" href="tel:+8801718305231">📞 দোকানে কল করুন</a>
   </div>
+
   <div class="footer-note">
-    Official Digital Verification Portal • MATRI JEWELLERS (Kasba)<br>
-    100% Serverless &amp; Privacy-Safe Verification
+    Official Digital Verification Portal &bull; MATRI JEWELLERS (Kasba)
   </div>
-</div>
 
-<script>
-// Shared verification hash (matches MATRI JEWELLERS Offline ERP)
-const MJ_SECRET = "MJ-KASBA-2026-SAJAL";
+  <script>
+    function fmtMoney(n) {
+      return Math.round(Number(n || 0)).toLocaleString("en-IN") + " টাকা";
+    }
+    function fmtDate(iso) {
+      if (!iso) return "-";
+      const p = String(iso).split("-");
+      return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : iso;
+    }
+    function esc(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+    function toBanglaWords(num) {
+      num = Math.round(Math.abs(Number(num || 0)));
+      if (num === 0) return "শূন্য টাকা মাত্র";
+      const w = [
+        "", "এক", "দুই", "তিন", "চার", "পাঁচ", "ছয়", "সাত", "আট", "নয়",
+        "দশ", "এগারো", "বারো", "তেরো", "চৌদ্দ", "পনেরো", "ষোলো", "সতেরো", "আঠারো", "উনিশ",
+        "বিশ", "একুশ", "বাইশ", "তেইশ", "চব্বিশ", "পঁচিশ", "ছাব্বিশ", "সাতাশ", "আটাশ", "ঊনত্রিশ",
+        "ত্রিশ", "একত্রিশ", "বত্রিশ", "তেত্রিশ", "চৌত্রিশ", "পঁয়ত্রিশ", "ছত্রিশ", "সাঁইত্রিশ", "আটত্রিশ", "ঊনচল্লিশ",
+        "চল্লিশ", "একচল্লিশ", "বিয়াল্লিশ", "তেতাল্লিশ", "চুয়াল্লিশ", "পঁয়তাল্লিশ", "ছেচল্লিশ", "সাতচল্লিশ", "আটচল্লিশ", "ঊনপঞ্চাশ",
+        "পঞ্চাশ", "একান্ন", "বায়ান্ন", "তিপ্পান্ন", "চুয়ান্ন", "পঞ্চান্ন", "ছাপ্পান্ন", "সাতান্ন", "আটান্ন", "ঊনষাট",
+        "ষাট", "একষট্টি", "বাষট্টি", "তেষট্টি", "চৌষট্টি", "পঁয়ষট্টি", "ছেষট্টি", "সাতষট্টি", "আটষট্টি", "ঊনসত্তর",
+        "সত্তর", "একাত্তর", "বাহাত্তর", "তিয়াত্তর", "চুয়াত্তর", "পঁচাত্তর", "ছিয়াত্তর", "সাতাত্তর", "আটাত্তর", "ঊনআশি",
+        "আশি", "একাশি", "বিরাশি", "তিরাশি", "চুরাশি", "পঁচাশি", "ছিয়াশি", "সাতাশি", "আটাশি", "ঊননব্বই",
+        "নব্বই", "একানব্বই", "বিরানব্বই", "তিরানব্বই", "চুরানব্বই", "পঁচানব্বই", "ছিয়ানব্বই", "সাতানব্বই", "আটানব্বই", "নিরানব্বই"
+      ];
+      function underCrore(n) {
+        let o = "";
+        if (n >= 100000) { o += w[Math.floor(n / 100000)] + " লক্ষ "; n %= 100000; }
+        if (n >= 1000) { o += w[Math.floor(n / 1000)] + " হাজার "; n %= 1000; }
+        if (n >= 100) { o += w[Math.floor(n / 100)] + " শত "; n %= 100; }
+        if (n > 0) o += w[n];
+        return o.trim();
+      }
+      let res = "";
+      if (num >= 10000000) { res += underCrore(Math.floor(num / 10000000)) + " কোটি "; num %= 10000000; }
+      if (num > 0) res += underCrore(num);
+      return res.trim() + " টাকা মাত্র";
+    }
 
-function computeHash(str) {
-  let h = 2166136261;
-  const full = str + "|" + MJ_SECRET;
-  for (let i = 0; i < full.length; i++) {
-    h ^= full.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return (h >>> 0).toString(36).toUpperCase().padStart(7, "0");
-}
+    const q = new URLSearchParams(window.location.search);
+    const type = q.get("t");
+    const area = document.getElementById("contentArea");
 
-function escapeHtml(s) {
-  return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
-
-function amountInBanglaWords(num) {
-  const n = Math.round(Number(num) || 0);
-  if (n === 0) return "শূন্য টাকা মাত্র";
-  const units = ["", "এক", "দুই", "তিন", "চার", "পাঁচ", "ছয়", "সাত", "আট", "নয়"];
-  const teens = ["দশ", "এগারো", "বারো", "তেরো", "চৌদ্দ", "পনেরো", "ষোল", "সতেরো", "আঠারো", "উনিশ"];
-  const tens = ["", "", "বিশ", "ত্রিশ", "চল্লিশ", "পঞ্চাশ", "ষাট", "সত্তর", "আশি", "নব্বই"];
-  const two = x => x < 10 ? units[x] : x < 20 ? teens[x - 10] : tens[Math.floor(x / 10)] + (x % 10 ? " " + units[x % 10] : "");
-  let rem = n, parts = [];
-  if (rem >= 10000000) { parts.push(two(Math.floor(rem / 10000000)) + " কোটি"); rem %= 10000000; }
-  if (rem >= 100000) { parts.push(two(Math.floor(rem / 100000)) + " লাখ"); rem %= 100000; }
-  if (rem >= 1000) { parts.push(two(Math.floor(rem / 1000)) + " হাজার"); rem %= 1000; }
-  if (rem >= 100) { parts.push(units[Math.floor(rem / 100)] + " শত"); rem %= 100; }
-  if (rem > 0) parts.push(two(rem));
-  return parts.join(" ") + " টাকা মাত্র";
-}
-
-function decodePayload(hashStr) {
-  const raw = hashStr.replace(/^#/, "").trim();
-  if (!raw) return null;
-  const b64 = raw.replace(/-/g, "+").replace(/_/g, "/");
-  const pad = b64 + "===".slice((b64.length + 3) % 4);
-  const bin = atob(pad);
-  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
-  const jsonText = new TextDecoder().decode(bytes);
-  return JSON.parse(jsonText);
-}
-
-function encodePayload(obj) {
-  const bytes = new TextEncoder().encode(JSON.stringify(obj));
-  let bin = "";
-  bytes.forEach(b => bin += String.fromCharCode(b));
-  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-function canonicalString(d) {
-  if (d.t === "mort") {
-    return ["mort", d.no, d.dt, d.nm, d.it, d.wt, d.ln, d.rt].join("|");
-  }
-  return ["sale", d.no, d.dt, d.nm, d.it, d.tot, d.pd, d.du].join("|");
-}
-
-function renderInvalid(reason) {
-  document.getElementById("contentArea").innerHTML = `
-    <div class="verify-bar verify-bad">
-      <span>✕ সতর্কতা: অবৈধ বা পরিবর্তিত রসিদ (Invalid / Tampered Memo)</span>
-    </div>
-    <div class="meta-card" style="text-align:center;color:#7f1d1d;">
-      এই QR কোডটির তথ্য সঠিকভাবে যাচাই করা যায়নি।<br>
-      <span style="font-size:11.5px;color:#5c534a;">(${escapeHtml(reason)})</span>
-    </div>
-    <div class="actions">
-      <a class="btn btn-call" href="tel:+8801718305231">দোকানে কল করুন</a>
-    </div>
-  `;
-}
-
-function renderMortgage(d) {
-  const loan = Number(d.ln || 0);
-  document.getElementById("contentArea").innerHTML = `
-    <div class="verify-bar verify-ok">
-      <span>✓ যাচাইকৃত আসল বন্ধকী রসিদ (Verified Authentic Receipt)</span>
-    </div>
-    <div class="highlight-box">
-      <div>
-        <div class="hl-label">মোট টাকা / Principal Loan</div>
-        <div class="hl-amount">${loan.toLocaleString("en-IN")} টাকা</div>
-        <div class="hl-words">কথায়: ${amountInBanglaWords(loan)}</div>
-      </div>
-      <div class="hl-badge">
-        <div class="sm">মাসিক সুদ</div>
-        <div class="big">${escapeHtml(d.rt)}%</div>
-        <div class="sm">প্রতি মাসে</div>
-      </div>
-    </div>
-    <div class="meta-card">
-      <div class="meta-row"><span class="meta-k">রসিদ নং</span><span class="meta-v">${escapeHtml(d.no)}</span></div>
-      <div class="meta-row"><span class="meta-k">জমার তারিখ</span><span class="meta-v">${escapeHtml(d.dt)}</span></div>
-      <div class="meta-row"><span class="meta-k">গ্রাহকের নাম</span><span class="meta-v">${escapeHtml(d.nm)}</span></div>
-      ${d.ad ? `<div class="meta-row"><span class="meta-k">ঠিকানা</span><span class="meta-v">${escapeHtml(d.ad)}</span></div>` : ""}
-      <div class="meta-row"><span class="meta-k">বন্ধকী গহনা</span><span class="meta-v">${escapeHtml(d.it)}</span></div>
-      <div class="meta-row"><span class="meta-k">ওজন</span><span class="meta-v">${escapeHtml(d.wt)}</span></div>
-    </div>
-    <div class="actions">
-      <a class="btn btn-call" href="tel:+8801718305231">দোকানে কল করুন</a>
-    </div>
-  `;
-}
-
-function renderSale(d) {
-  const tot = Number(d.tot || 0);
-  const pd = Number(d.pd || 0);
-  const du = Number(d.du || 0);
-  document.getElementById("contentArea").innerHTML = `
-    <div class="verify-bar verify-ok">
-      <span>✓ যাচাইকৃত আসল ক্যাশ মেমো (Verified Authentic Cash Memo)</span>
-    </div>
-    <div class="highlight-box">
-      <div>
-        <div class="hl-label">সর্বমোট বিল / Grand Total</div>
-        <div class="hl-amount">${tot.toLocaleString("en-IN")} টাকা</div>
-        <div class="hl-words">পরিশোধ: ${pd.toLocaleString("en-IN")} ৳ | বকেয়া: ${du.toLocaleString("en-IN")} ৳</div>
-      </div>
-      <div class="hl-badge">
-        <div class="sm">ইনভয়েস</div>
-        <div class="big" style="font-size:15px;margin-top:3px;">${escapeHtml(d.no)}</div>
-        <div class="sm">${escapeHtml(d.pm || "Cash")}</div>
-      </div>
-    </div>
-    <div class="meta-card">
-      <div class="meta-row"><span class="meta-k">তারিখ</span><span class="meta-v">${escapeHtml(d.dt)}</span></div>
-      <div class="meta-row"><span class="meta-k">গ্রাহকের নাম</span><span class="meta-v">${escapeHtml(d.nm)}</span></div>
-      ${d.ad ? `<div class="meta-row"><span class="meta-k">ঠিকানা</span><span class="meta-v">${escapeHtml(d.ad)}</span></div>` : ""}
-      <div class="meta-row"><span class="meta-k">গহনার বিবরণ</span><span class="meta-v">${escapeHtml(d.it)}</span></div>
-    </div>
-    <div class="actions">
-      <a class="btn btn-call" href="tel:+8801718305231">দোকানে কল করুন</a>
-    </div>
-  `;
-}
-
-function openDemo(type) {
-  const sample = type === "mort"
-    ? { t: "mort", no: "BM-2047", dt: "2026-11-20", nm: "Ratna Begum", ad: "Kasba", it: "Gold Chain (22K)", wt: "0V-6A-4R-5P (4.92g)", ln: 50000, rt: 4 }
-    : { t: "sale", no: "INV-301", dt: "2026-11-20", nm: "Ananya Roy", ad: "Kasba", it: "Royal Finger Ring (22K) - 3.11g", tot: 62000, pd: 62000, du: 0, pm: "Cash" };
-  sample.h = computeHash(canonicalString(sample));
-  location.hash = encodePayload(sample);
-}
-
-function renderWelcome() {
-  document.getElementById("contentArea").innerHTML = `
-    <div class="verify-bar verify-ok">
-      <span>✓ MATRI JEWELLERS ডিজিটাল ভেরিফিকেশন পেজ চালু আছে</span>
-    </div>
-    <div class="meta-card" style="text-align:center;">
-      যেকোনো ক্যাশ মেমো বা বন্ধকী রসিদের QR কোড স্ক্যান করলে এখানে সরাসরি ডিজিটাল কপি দেখাবে।<br>
-      <span style="font-size:12px;color:#5c534a;">নিচের বাটনে ক্লিক করে নমুনা দেখে নিতে পারেন:</span>
-    </div>
-    <div class="actions">
-      <button class="btn btn-gold" onclick="openDemo('sale')">স্যাম্পল ক্যাশ মেমো দেখুন</button>
-      <button class="btn btn-outline" onclick="openDemo('mort')">স্যাম্পল বন্ধকী রসিদ দেখুন</button>
-    </div>
-  `;
-}
-
-function boot() {
-  if (!location.hash || location.hash === "#") {
-    renderWelcome();
-    return;
-  }
-  try {
-    const d = decodePayload(location.hash);
-    if (!d || !d.t || !d.h) return renderInvalid("Missing verification signature");
-    const expected = computeHash(canonicalString(d));
-    if (d.h !== expected) return renderInvalid("Signature mismatch");
-    if (d.t === "mort") renderMortgage(d);
-    else if (d.t === "sale") renderSale(d);
-    else renderInvalid("Unknown document type");
-  } catch (e) {
-    renderInvalid("Malformed QR data");
-  }
-}
-
-window.addEventListener("hashchange", boot);
-boot();
-</script>
+    if (type === "m") {
+      const principal = Number(q.get("p") || 0);
+      const rate = q.get("rt") || "0";
+      const monthly = Math.round((principal * Number(rate || 0)) / 100);
+      const status = q.get("st") || "Active";
+      area.innerHTML = `
+        <div class="verified-bar">&#10003; যাচাইকৃত আসল বন্ধকী রসিদ (Verified Authentic Receipt)</div>
+        <div class="amount-card">
+          <div class="amount-left">
+            <div class="lbl">মোট টাকা / PRINCIPAL LOAN</div>
+            <div class="big-val">${Math.round(principal).toLocaleString("en-IN")}<br>টাকা</div>
+            <div class="words">কথায়: ${toBanglaWords(principal)}</div>
+          </div>
+          <div class="side-pill">
+            <div class="sp-top">মাসিক লাভ</div>
+            <div class="sp-val">${esc(rate)}%</div>
+            <div class="sp-sub">${fmtMoney(monthly)} / মাস</div>
+          </div>
+        </div>
+        <div class="details-box">
+          <div class="row"><span class="k">রসিদ নং</span><span class="v">${esc(q.get("r") || "-")}</span></div>
+          <div class="row"><span class="k">লকার নং</span><span class="v">${esc(q.get("l") || "-")}</span></div>
+          <div class="row"><span class="k">জমার তারিখ</span><span class="v">${fmtDate(q.get("d"))}</span></div>
+          <div class="row"><span class="k">মেয়াদ শেষ</span><span class="v">${fmtDate(q.get("dd"))}</span></div>
+          <div class="row"><span class="k">গ্রাহকের নাম</span><span class="v">${esc(q.get("n") || "-")}</span></div>
+          <div class="row"><span class="k">বন্ধকী গহনা</span><span class="v">${esc(q.get("i") || "-")}</span></div>
+          <div class="row"><span class="k">ওজন</span><span class="v">${esc(q.get("w") || "-")}</span></div>
+          <div class="row"><span class="k">স্ট্যাটাস</span><span class="v"><span class="${status === "Active" ? "badge-active" : "badge-paid"}">${status === "Active" ? "সক্রিয় (Active)" : "ছাড়ানো (Released)"}</span></span></div>
+        </div>
+      `;
+    } else if (type === "s") {
+      const total = Number(q.get("tot") || 0);
+      const paid = Number(q.get("pd") || 0);
+      const due = Math.max(0, total - paid);
+      const goldVal = Number(q.get("g") || 0);
+      const making = Number(q.get("mk") || 0);
+      const disc = Number(q.get("dc") || 0);
+      area.innerHTML = `
+        <div class="verified-bar">&#10003; যাচাইকৃত আসল ক্যাশ মেমো (Verified Authentic Cash Memo)</div>
+        <div class="amount-card">
+          <div class="amount-left">
+            <div class="lbl">সর্বমোট বিল / TOTAL BILL</div>
+            <div class="big-val">${Math.round(total).toLocaleString("en-IN")}<br>টাকা</div>
+            <div class="words">কথায়: ${toBanglaWords(total)}</div>
+          </div>
+          <div class="side-pill">
+            <div class="sp-top">পেমেন্ট স্ট্যাটাস</div>
+            <div class="sp-val" style="font-size:17px;">${due > 0 ? "PARTIAL" : "PAID"}</div>
+            <div class="sp-sub">${due > 0 ? "বকেয়া আছে" : "পরিশোধিত"}</div>
+          </div>
+        </div>
+        <div class="details-box">
+          <div class="row"><span class="k">মেমো নং</span><span class="v">${esc(q.get("r") || "-")}</span></div>
+          <div class="row"><span class="k">তারিখ</span><span class="v">${fmtDate(q.get("d"))}</span></div>
+          <div class="row"><span class="k">গ্রাহকের নাম</span><span class="v">${esc(q.get("n") || "-")}</span></div>
+          <div class="row"><span class="k">গহনার বিবরণ</span><span class="v">${esc(q.get("i") || "-")}</span></div>
+          <div class="row"><span class="k">ওজন</span><span class="v">${esc(q.get("w") || "-")}</span></div>
+          ${goldVal > 0 ? `<div class="row"><span class="k">স্বর্ণের মূল্য</span><span class="v">${fmtMoney(goldVal)}</span></div>` : ""}
+          ${making > 0 ? `<div class="row"><span class="k">মজুরি (Making)</span><span class="v">${fmtMoney(making)}</span></div>` : ""}
+          ${disc > 0 ? `<div class="row"><span class="k">ডিসকাউন্ট</span><span class="v">− ${fmtMoney(disc)}</span></div>` : ""}
+          <div class="row"><span class="k">নগদ জমা</span><span class="v" style="color:#065F46;">${fmtMoney(paid)}</span></div>
+          <div class="row"><span class="k">বকেয়া</span><span class="v"><span class="${due > 0 ? "badge-due" : "badge-paid"}">${due > 0 ? fmtMoney(due) : "পরিশোধিত (০ টাকা)"}</span></span></div>
+        </div>
+      `;
+    } else {
+      area.innerHTML = `
+        <div class="verified-bar">&#10003; MATRI JEWELLERS — Official Verification Portal</div>
+        <div class="empty-box">
+          স্বাগতম! আপনার <strong>ক্যাশ মেমো</strong> অথবা <strong>বন্ধকী রসিদের</strong> গায়ে থাকা <strong>QR কোড</strong> স্ক্যান করলে এখানে সরাসরি আসল ডিজিটাল রসিদ দেখা যাবে।
+        </div>
+      `;
+    }
+  </script>
 </body>
 </html>
